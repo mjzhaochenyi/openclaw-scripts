@@ -40,7 +40,7 @@ if (-not $GatewayHost) {
     Write-Host ""
     for ($i = 0; $i -lt $gateways.Count; $i++) {
         $g = $gateways[$i]
-        $tlsTag = if ($g.TLS) { " [TLS]" } else { "" }
+        $tlsTag = $(if ($g.TLS) { " [TLS]" } else { "" })
         Write-Host "  [$($i+1)] $($g.Name) — $($g.Host):$($g.Port)$tlsTag"
     }
     Write-Host "  [0] Custom (enter manually)"
@@ -189,7 +189,8 @@ Start-Sleep -Seconds 3
 $status = & $nssm status $ServiceName
 Write-Host ""
 Write-Host "=== Result ===" -ForegroundColor Cyan
-Write-Host "Status: $status" -ForegroundColor $(if($status -match "RUNNING"){"Green"}else{"Red"})
+$statusColor = if ($status -match "RUNNING") { "Green" } else { "Red" }
+Write-Host "Status: $status" -ForegroundColor $statusColor
 Write-Host ""
 Write-Host "Useful commands:" -ForegroundColor Yellow
 Write-Host "  nssm status  `"$ServiceName`""
