@@ -126,7 +126,7 @@ if %errorlevel%==0 (
 )
 
 :: --- Stop existing NSSM service if running ---
-for /f "delims=" %%s in ('"%NSSM%" status "%SERVICE_NAME%" 2^>^&1') do set "SVC_STATUS=%%s"
+for /f "delims=" %%s in ('cmd /c ""%NSSM%" status "%SERVICE_NAME%" 2>&1"') do set "SVC_STATUS=%%s"
 echo %SVC_STATUS% | findstr /i "SERVICE_RUNNING SERVICE_PAUSED SERVICE_STOPPED" >nul 2>&1
 if %errorlevel%==0 (
     echo Stopping existing service...
@@ -155,7 +155,7 @@ echo Starting service...
 "%NSSM%" start "%SERVICE_NAME%"
 
 timeout /t 3 /nobreak >nul
-for /f "delims=" %%s in ('"%NSSM%" status "%SERVICE_NAME%"') do set "FINAL_STATUS=%%s"
+for /f "delims=" %%s in ('cmd /c ""%NSSM%" status "%SERVICE_NAME%""') do set "FINAL_STATUS=%%s"
 echo.
 echo === Result ===
 echo Status: %FINAL_STATUS%
