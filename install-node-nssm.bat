@@ -22,6 +22,7 @@ cd /d "%~dp0"
 echo.
 echo ========================================
 echo    OpenClaw Node NSSM Installer
+echo    (Local System + User Home)
 echo ========================================
 echo.
 
@@ -89,9 +90,14 @@ if "%OPENCLAW_JS%"=="" (
 echo OpenClaw: %OPENCLAW_JS%
 
 :: --- Resolve paths ---
+:: Use current user's .openclaw dir (Local System will access via OPENCLAW_HOME env var)
 set "OPENCLAW_DIR=%USERPROFILE%\.openclaw"
 set "LOG_OUT=%OPENCLAW_DIR%\node.log"
 set "LOG_ERR=%OPENCLAW_DIR%\node-error.log"
+
+:: --- Ensure .openclaw dir has open ACL for Local System ---
+echo Granting Local System read access to %OPENCLAW_DIR%...
+icacls "%OPENCLAW_DIR%" /grant "SYSTEM:(OI)(CI)F" /T /Q >nul 2>&1
 
 :: --- Build args ---
 set "NODE_ARGS=%OPENCLAW_JS% node run --host %GATEWAY_HOST% --port %PORT%"
@@ -102,12 +108,14 @@ set "TLS_LABEL=plain"
 if "%USE_TLS%"=="1" set "TLS_LABEL=TLS"
 echo.
 echo --- Configuration ---
-echo Service:    %SERVICE_NAME%
-echo Gateway:    %GATEWAY_HOST%:%PORT% (%TLS_LABEL%)
-echo Log (out):  %LOG_OUT%
-echo Log (err):  %LOG_ERR%
-echo Restart:    %RESTART_DELAY%ms after crash
-echo Command:    %NODE_PATH% %NODE_ARGS%
+echo Service:      %SERVICE_NAME%
+echo Gateway:      %GATEWAY_HOST%:%PORT% (%TLS_LABEL%)
+echo Run as:       Local System (no password needed)
+echo OPENCLAW_HOME: %OPENCLAW_DIR%
+echo Log (out):    %LOG_OUT%
+echo Log (err):    %LOG_ERR%
+echo Restart:      %RESTART_DELAY%ms after crash
+echo Command:      %NODE_PATH% %NODE_ARGS%
 echo.
 
 set "CONFIRM=Y"
@@ -142,13 +150,19 @@ echo Installing NSSM service...
 "%NSSM%" set "%SERVICE_NAME%" AppRestartDelay %RESTART_DELAY%
 "%NSSM%" set "%SERVICE_NAME%" AppStdout "%LOG_OUT%"
 "%NSSM%" set "%SERVICE_NAME%" AppStderr "%LOG_ERR%"
-"%NSSM%" set "%SERVICE_NAME%" AppEnvironmentExtra "TMPDIR=%TEMP%"
 
-:: Run as current user (preserves node pairing)
-set "PASSWORD="
-set /p "PASSWORD=Password for current user (blank if none): "
-for /f "tokens=*" %%u in ('whoami') do set "CURRENT_USER=%%u"
-"%NSSM%" set "%SERVICE_NAME%" ObjectName "%CURRENT_USER%" "%PASSWORD%"
+:: --- Run as Local System (default for NSSM, no ObjectName needed) ---
+:: Set OPENCLAW_HOME so Local System finds the user's config/pairing
+:: Also set HOME and USERPROFILE for Node.js path resolution
+"%NSSM%" set "%SERVICE_NAME%" AppEnvironmentExtra ^
+    "OPENCLAW_HOME=%OPENCLAW_DIR%" ^
+    "HOME=%USERPROFILE%" ^
+    "USERPROFILE=%USERPROFILE%" ^
+    "TMPDIR=%TEMP%" ^
+    "NODE_ENV=production"
+
+:: Explicitly set to Local System (NSSM default, but being explicit)
+"%NSSM%" set "%SERVICE_NAME%" ObjectName "LocalSystem"
 
 :: --- Start ---
 echo Starting service...
@@ -159,12 +173,18 @@ for /f "delims=" %%s in ('cmd /c ""%NSSM%" status "%SERVICE_NAME%""') do set "FI
 echo.
 echo === Result ===
 echo Status: %FINAL_STATUS%
+echo Run as: Local System
+echo Config: %OPENCLAW_DIR%
 echo.
 echo Useful commands:
 echo   nssm status  "%SERVICE_NAME%"
 echo   nssm restart "%SERVICE_NAME%"
 echo   nssm stop    "%SERVICE_NAME%"
 echo   type %LOG_ERR%
+echo.
+echo NOTE: Service runs as Local System with OPENCLAW_HOME
+echo       pointing to %OPENCLAW_DIR%
+echo       ACL granted for SYSTEM to read that directory.
 goto :end
 
 :fail
