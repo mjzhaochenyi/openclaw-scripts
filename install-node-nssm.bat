@@ -111,7 +111,7 @@ echo --- Configuration ---
 echo Service:      %SERVICE_NAME%
 echo Gateway:      %GATEWAY_HOST%:%PORT% (%TLS_LABEL%)
 echo Run as:       Local System (no password needed)
-echo OPENCLAW_HOME: %OPENCLAW_DIR%
+echo OPENCLAW_HOME: %USERPROFILE% (state dir: %OPENCLAW_DIR%)
 echo Log (out):    %LOG_OUT%
 echo Log (err):    %LOG_ERR%
 echo Restart:      %RESTART_DELAY%ms after crash
@@ -152,10 +152,11 @@ echo Installing NSSM service...
 "%NSSM%" set "%SERVICE_NAME%" AppStderr "%LOG_ERR%"
 
 :: --- Run as Local System (default for NSSM, no ObjectName needed) ---
-:: Set OPENCLAW_HOME so Local System finds the user's config/pairing
-:: Also set HOME and USERPROFILE for Node.js path resolution
+:: OPENCLAW_HOME must point to the USER's home dir (not .openclaw dir)
+:: because OpenClaw appends /.openclaw internally via resolveStateDir()
+:: e.g. OPENCLAW_HOME=C:\Users\gazch → state dir = C:\Users\gazch\.openclaw
 "%NSSM%" set "%SERVICE_NAME%" AppEnvironmentExtra ^
-    "OPENCLAW_HOME=%OPENCLAW_DIR%" ^
+    "OPENCLAW_HOME=%USERPROFILE%" ^
     "HOME=%USERPROFILE%" ^
     "USERPROFILE=%USERPROFILE%" ^
     "TMPDIR=%TEMP%" ^
@@ -182,9 +183,9 @@ echo   nssm restart "%SERVICE_NAME%"
 echo   nssm stop    "%SERVICE_NAME%"
 echo   type %LOG_ERR%
 echo.
-echo NOTE: Service runs as Local System with OPENCLAW_HOME
-echo       pointing to %OPENCLAW_DIR%
-echo       ACL granted for SYSTEM to read that directory.
+echo NOTE: Service runs as Local System with OPENCLAW_HOME=%USERPROFILE%
+echo       OpenClaw resolves state dir as OPENCLAW_HOME/.openclaw
+echo       ACL granted for SYSTEM to read %OPENCLAW_DIR%
 goto :end
 
 :fail
