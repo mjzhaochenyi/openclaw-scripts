@@ -95,7 +95,8 @@ set "OPENCLAW_DIR=%USERPROFILE%\.openclaw"
 set "LOG_OUT=%OPENCLAW_DIR%\node.log"
 set "LOG_ERR=%OPENCLAW_DIR%\node-error.log"
 
-:: --- Ensure .openclaw dir has open ACL for Local System ---
+:: --- Ensure .openclaw dir exists and has open ACL for Local System ---
+if not exist "%OPENCLAW_DIR%" mkdir "%OPENCLAW_DIR%"
 echo Granting Local System read access to %OPENCLAW_DIR%...
 icacls "%OPENCLAW_DIR%" /grant "SYSTEM:(OI)(CI)F" /T /Q >nul 2>&1
 
@@ -145,7 +146,7 @@ if %errorlevel%==0 (
 
 :: --- Install ---
 echo Installing NSSM service...
-"%NSSM%" install "%SERVICE_NAME%" "%NODE_PATH%" %NODE_ARGS%
+"%NSSM%" install "%SERVICE_NAME%" "%NODE_PATH%" "%NODE_ARGS%"
 "%NSSM%" set "%SERVICE_NAME%" AppDirectory "%OPENCLAW_DIR%"
 "%NSSM%" set "%SERVICE_NAME%" AppRestartDelay %RESTART_DELAY%
 "%NSSM%" set "%SERVICE_NAME%" AppStdout "%LOG_OUT%"
@@ -154,13 +155,8 @@ echo Installing NSSM service...
 :: --- Run as Local System (default for NSSM, no ObjectName needed) ---
 :: OPENCLAW_HOME must point to the USER's home dir (not .openclaw dir)
 :: because OpenClaw appends /.openclaw internally via resolveStateDir()
-:: e.g. OPENCLAW_HOME=C:\Users\gazch → state dir = C:\Users\gazch\.openclaw
-"%NSSM%" set "%SERVICE_NAME%" AppEnvironmentExtra ^
-    "OPENCLAW_HOME=%USERPROFILE%" ^
-    "HOME=%USERPROFILE%" ^
-    "USERPROFILE=%USERPROFILE%" ^
-    "TMPDIR=%TEMP%" ^
-    "NODE_ENV=production"
+:: e.g. OPENCLAW_HOME=C:\Users\gazch => state dir = C:\Users\gazch\.openclaw
+"%NSSM%" set "%SERVICE_NAME%" AppEnvironmentExtra "OPENCLAW_HOME=%USERPROFILE%" "HOME=%USERPROFILE%" "USERPROFILE=%USERPROFILE%" "TMPDIR=%TEMP%" "NODE_ENV=production"
 
 :: Explicitly set to Local System (NSSM default, but being explicit)
 "%NSSM%" set "%SERVICE_NAME%" ObjectName "LocalSystem"
