@@ -8,7 +8,8 @@ Collection of deployment/operations scripts for the [OpenClaw](https://github.co
 
 ## Repository Contents
 
-- **`install-node-nssm.ps1`** — PowerShell script that installs an OpenClaw Node as a Windows Service via [NSSM](https://nssm.cc/). Requires admin privileges (`#Requires -RunAsAdministrator`). Supports interactive gateway selection from a predefined list or custom input, auto-discovers `nssm.exe`, `node.exe`, and the globally-installed `openclaw` npm package, then configures NSSM with auto-restart, stdout/stderr logging to `~/.openclaw/`, and runs under the current user account.
+- **`install-node-nssm.bat`** — Batch script that installs an OpenClaw Node as a Windows Service via [NSSM](https://nssm.cc/) running as **Local System**. Auto-elevates via UAC, auto-discovers `nssm.exe`, `node.exe`, and the globally-installed `openclaw` npm package, then configures NSSM with auto-restart, stdout/stderr logging to `~/.openclaw/`, and grants SYSTEM ACL on the state directory.
+- **`install-node-nssm-user.bat`** — Same as above but runs the service under a **user account** (prompts for username/password). Grants "Log on as a service" right and ACL. Use this when the node needs access to the user's desktop session (e.g. browser, GUI).
 
 ## Conventions
 
